@@ -1,0 +1,17 @@
+# Entornos virtuales (¡CRUCIAL que no se suba!)
+venv_subastas/
+venv/
+env/
+
+# Archivos compilados y caché de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Base de datos local
+db.sqlite3
+
+# Variables de entorno y configuraciones locales
+.env
+.vscode/
