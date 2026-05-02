@@ -1,7 +1,9 @@
 from rest_framework import serializers
-from apps.anuncio.models import Anuncio, Categoria
+from apps.anuncio.models import Anuncio, Categoria, OfertaAnuncio
 from apps.usuario.models import Usuario
 from django.utils import timezone
+from django.core.exceptions import ValidationError as DjangoValidationError
+from rest_framework.exceptions import ValidationError as DRFValidationError
 
 class CategoriaSerializer(serializers.ModelSerializer): 
     class Meta: 
@@ -12,7 +14,38 @@ class CategoriaSerializer(serializers.ModelSerializer):
             'activa'
         ]
 
+class OfertaAnuncioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OfertaAnuncio
+        fields = ['anuncio', 'precio_oferta', 'usuario', 'es_ganador', 'fecha_oferta']
+        read_only_fields = ['es_ganador', 'fecha_oferta', 'usuario']
 
+    def validate(self,data):
+        try:
+            usuario = self.context['request'].user
+            instance = OfertaAnuncio(usuario=usuario, **data)
+            instance.clean()
+        except DjangoValidationError as e:
+            raise DRFValidationError(e.messages)
+        return data
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        representation['anuncio'] = {
+            'id' : instance.anuncio.id,
+            'titulo': instance.anuncio.titulo,
+            'precio_inicial' : instance.anuncio.precio_inicial,
+            'fecha_fin': instance.anuncio.fecha_fin,
+            'publicado_por': instance.anuncio.publicado_por.username
+        }
+
+        representation['usuario'] = {
+            'id': instance.usuario.id,
+            'username': instance.usuario.username
+        }
+
+        return representation
 
 class AnuncioSerializer(serializers.ModelSerializer):
     

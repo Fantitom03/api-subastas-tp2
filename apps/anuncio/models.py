@@ -46,9 +46,15 @@ class OfertaAnuncio(models.Model):
     fecha_oferta = models.DateTimeField(auto_now_add=True)
     precio_oferta = models.DecimalField(decimal_places=2, max_digits=10)
     es_ganador = models.BooleanField(default=False)
-    usuario = models.ForeignKey('usuario.Usuario', on_delete=models.CASCADE, related_name='ofertas')
+    usuario = models.ForeignKey('usuario.Usuario', on_delete=models.CASCADE, related_name='ofertas', db_column='usuario_id')
 
     def clean(self):
+        if self.usuario == self.anuncio.publicado_por:
+            raise ValidationError("No puedes ofertar en tu propio anuncio")
+        
+        if self.anuncio.fecha_fin < timezone.localtime(timezone.now()):
+            raise ValidationError("El anuncio ya expiró")
+
         # Validar si el precio de la oferta es mayor que el precio inicial del anuncio
         if self.precio_oferta <= self.anuncio.precio_inicial:
             raise ValidationError("La oferta debe ser mayor al precio inicial del artículo.")

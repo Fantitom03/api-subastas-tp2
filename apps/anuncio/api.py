@@ -1,8 +1,8 @@
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Anuncio, Categoria
+from .models import Anuncio, Categoria, OfertaAnuncio
 from apps.usuario.models import Usuario
-from .serializers import AnuncioSerializer, CategoriaSerializer
+from .serializers import AnuncioSerializer, CategoriaSerializer, OfertaAnuncioSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.utils import timezone
@@ -23,7 +23,7 @@ class AnuncioViewSet(viewsets.ModelViewSet):
     search_fields = ['titulo', 'descripcion']
 
     def perform_create(self, serializer):
-        usuario_a_asignar = Usuario.objects.first()
+        usuario_a_asignar = self.request.user
 
         serializer.save(publicado_por=usuario_a_asignar)
 
@@ -64,4 +64,14 @@ class CategoriaViewSet(viewsets.ModelViewSet):
     filterset_class = CategoriaFilter
     # El ordering_fields nos permite definir los campos por los cuales se puede ordenar la consulta.
     ordering_fields = ['nombre']
+
+
+class OfertaAnuncioViewSet(viewsets.ModelViewSet):
+    queryset = OfertaAnuncio.objects.all()
+    serializer_class = OfertaAnuncioSerializer
+
+    def perform_create(self, serializer):
+        usuario_a_asignar = self.request.user
+
+        serializer.save(usuario=usuario_a_asignar)
 
