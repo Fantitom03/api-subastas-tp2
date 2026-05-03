@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from apps.anuncio.models import Anuncio, Categoria, OfertaAnuncio
-from apps.usuario.models import Usuario
 from django.utils import timezone
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.exceptions import ValidationError as DRFValidationError
