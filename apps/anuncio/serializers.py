@@ -69,6 +69,8 @@ class AnuncioSerializer(serializers.ModelSerializer):
     # ----- VALIDACIONES PERSONALIZADAS ----- #
     def validate_precio_inicial(self, data):
         request = self.context.get('request') #permite tener contexto de la view en el serializador, si no existe devuelve None
+        #No conviene hacer los controles de las versiones en el serializador. Es mejor hacerlos en la vista, para mantener el serializador lo más limpio posible. Sin embargo, lo hacemos aquí solo a modo de ejemplo.
+        #Si necesitamos hacer un control diferente lo mejor sería hacer otro serializador para esa versión, y así mantener el código más limpio y organizado. De esta forma, cada serializador se encargaría de las validaciones específicas de su versión, evitando la necesidad de controles condicionales dentro de un mismo método de validación.
         if request.version == '2':
             if data < 50:
                 raise serializers.ValidationError("El precio inicial debe ser mayor o igual a $50")
@@ -84,6 +86,7 @@ class AnuncioSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(f"La fecha ingresada debe ser superior que la actual - Fecha Actual {current_date}")
         return data
     
+    #Tenemos que utilizarlo para validaciones de campos relacionados, como en este caso, donde queremos comparar fecha_inicio con fecha_fin. Si intentamos hacer esta validación en validate_fecha_fin, no podremos acceder a fecha_inicio porque aún no se ha validado.
     def validate(self, data):
         if data['fecha_fin'] < data['fecha_inicio']:
             raise serializers.ValidationError("La fecha de fin debe ser superior a la fecha inicio")
