@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+from datetime import timedelta
 
 load_dotenv()
 
@@ -155,6 +156,8 @@ REST_FRAMEWORK= {
 
 SIMPLE_JWT = {
     'SIGNING_KEY': os.getenv('KEY_JWT'),
-    'ALGORITHM': 'HS256'
+    'ALGORITHM': 'HS256',
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=10),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 
