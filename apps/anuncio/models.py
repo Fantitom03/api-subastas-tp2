@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
-
+import uuid
 
 class Categoria(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
@@ -12,6 +12,7 @@ class Categoria(models.Model):
 
 
 class Anuncio(models.Model):
+    uuid = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField(blank=True)
     precio_inicial = models.DecimalField(decimal_places=2, max_digits=10)
@@ -49,6 +50,10 @@ class OfertaAnuncio(models.Model):
     usuario = models.ForeignKey('usuario.Usuario', on_delete=models.CASCADE, related_name='ofertas', db_column='usuario_id')
 
     def clean(self):
+        # Validar si el anuncio está activo
+        if not self.anuncio.activo:
+            raise ValidationError("No puedes ofertar en un anuncio que no está activo.")
+        
         if self.usuario == self.anuncio.publicado_por:
             raise ValidationError("No puedes ofertar en tu propio anuncio")
         

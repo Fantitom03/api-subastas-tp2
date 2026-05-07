@@ -59,11 +59,11 @@ class AnuncioSerializer(serializers.ModelSerializer):
     class Meta:
         model= Anuncio
         fields = [
-            'id', 'titulo', 'descripcion', 'precio_inicial', 'imagen',
+            'uuid', 'titulo', 'descripcion', 'precio_inicial', 'imagen',
             'fecha_inicio', 'fecha_fin', 'activo', 'categorias',
             'publicado_por', 'oferta_ganadora'
         ]
-        read_only_fields = ['publicado_por', 'oferta_ganadora']
+        read_only_fields = ['publicado_por', 'oferta_ganadora', 'uuid']
 
 
     # ----- VALIDACIONES PERSONALIZADAS ----- #
@@ -88,8 +88,15 @@ class AnuncioSerializer(serializers.ModelSerializer):
     
     #Tenemos que utilizarlo para validaciones de campos relacionados, como en este caso, donde queremos comparar fecha_inicio con fecha_fin. Si intentamos hacer esta validación en validate_fecha_fin, no podremos acceder a fecha_inicio porque aún no se ha validado.
     def validate(self, data):
-        if data['fecha_fin'] < data['fecha_inicio']:
-            raise serializers.ValidationError("La fecha de fin debe ser superior a la fecha inicio")
+        # Tomamos los valores de 'data' (si vienen en el PATCH/POST) o de 'self.instance' (si ya existen en la BD y no se están modificando)
+        fecha_inicio = data.get('fecha_inicio', getattr(self.instance, 'fecha_inicio', None))
+        fecha_fin = data.get('fecha_fin', getattr(self.instance, 'fecha_fin', None))
+        
+        # Solo validamos si ambas fechas existen
+        if fecha_inicio and fecha_fin:
+            if fecha_fin < fecha_inicio:
+                raise serializers.ValidationError("La fecha de fin debe ser superior a la fecha inicio")
+                
         return data
     
     
