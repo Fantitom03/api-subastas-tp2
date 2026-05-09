@@ -54,9 +54,11 @@ class OfertaAnuncio(models.Model):
         if not self.anuncio.activo:
             raise ValidationError("No puedes ofertar en un anuncio que no está activo.")
         
+        #Validar si el usuario es el mismo que oferta
         if self.usuario == self.anuncio.publicado_por:
             raise ValidationError("No puedes ofertar en tu propio anuncio")
         
+        #Validar si el anuncio ya expiró
         if self.anuncio.fecha_fin < timezone.localtime(timezone.now()):
             raise ValidationError("El anuncio ya expiró")
 

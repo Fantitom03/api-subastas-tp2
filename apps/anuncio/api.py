@@ -6,7 +6,6 @@ from .serializers import AnuncioSerializer, CategoriaSerializer, OfertaAnuncioSe
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.utils import timezone
-from django.shortcuts import get_object_or_404
 from .filters import AnuncioFilter, CategoriaFilter
 from rest_framework.permissions import IsAuthenticated
 from .permissions import IsPropietarioOrReadOnly
@@ -100,7 +99,7 @@ class AnuncioViewSet(viewsets.ModelViewSet):
                 # 1. Que el usuario no sea el creador.
                 # 2. Que el precio sea mayor al inicial y a la última oferta.
                 # 3. Que no haya expirado por fecha.
-                serializer.save()
+                serializer.save(usuario=request.user) 
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
