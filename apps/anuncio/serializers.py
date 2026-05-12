@@ -3,6 +3,13 @@ from apps.anuncio.models import Anuncio, Categoria, OfertaAnuncio
 from django.utils import timezone
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.exceptions import ValidationError as DRFValidationError
+from decimal import Decimal
+from dotenv import load_dotenv
+import os
+import requests
+
+load_dotenv()
+
 
 class CategoriaSerializer(serializers.ModelSerializer): 
     class Meta: 
@@ -47,7 +54,8 @@ class OfertaAnuncioSerializer(serializers.ModelSerializer):
         return representation
 
 class AnuncioSerializer(serializers.ModelSerializer):
-    
+    precio_usd = serializers.SerializerMethodField()
+
     # Manejamos las categorías por su id, pero queremos devolver el objeto completo en la respuesta. Por eso, usamos PrimaryKeyRelatedField 
     # para recibir solo los ids de las categorías, y luego modificamos la representación en to_representation.
     categorias = serializers.PrimaryKeyRelatedField(
@@ -61,9 +69,9 @@ class AnuncioSerializer(serializers.ModelSerializer):
         fields = [
             'uuid', 'titulo', 'descripcion', 'precio_inicial', 'imagen',
             'fecha_inicio', 'fecha_fin', 'activo', 'categorias',
-            'publicado_por', 'oferta_ganadora'
+            'publicado_por', 'oferta_ganadora', 'precio_usd'
         ]
-        read_only_fields = ['publicado_por', 'oferta_ganadora', 'uuid']
+        read_only_fields = ['publicado_por', 'oferta_ganadora', 'uuid', 'precio_usd']
 
 
     # ----- VALIDACIONES PERSONALIZADAS ----- #
@@ -106,3 +114,31 @@ class AnuncioSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         representation['categorias'] = CategoriaSerializer(instance.categorias.all(), many=True).data
         return representation
+    
+
+    def obtener_dolar(self):
+        key = os.getenv('EXCHANGERATE_API_KEY')
+        try:
+            response = requests.get(f'https://v6.exchangerate-api.com/v6/{key}/latest/ARS')
+
+            data = response.json()
+
+            return Decimal(str(data["conversion_rates"]["USD"]))
+        
+        except requests.exceptions.HTTPError as http_err:
+            return JsonResponse({"error": "Hubo un problema al consultar el servicio externo."}, status = 502)
+        
+        except requests.exceptions.ConnectionError as conn_err:
+            return JsonResponse({"error": "No se pudo conectar al servicio externo. Inténtelo más tarde"}, status = 502)
+        
+        except requests.exceptions.Timeout as timeout_err:
+            return JsonResponse({"error": "El servicio externo tardó demasiado en responder"}, status = 504)
+        
+        except requests.exceptions.RequestException as err:
+            return JsonResponse({"error": "Ocurró un error inesperado al contactar el serivcio externo"}, status = 500)
+    
+    def get_precio_usd(self,obj):
+        if not hasattr(self, "_usd_rate"):
+            self._usd_rate = self.obtener_dolar()
+
+        return round(obj.precio_inicial * self._usd_rate, 2)
